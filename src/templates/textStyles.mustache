@@ -1,0 +1,30 @@
+{{#styles}}
+<Style x:Key="{{key}}"
+       TargetType="Label">
+    {{#fontFamily}}
+    <Setter Property="FontFamily"
+            Value="{{fontFamily}}" />
+    {{/fontFamily}}
+    {{#fontSize}}
+    <Setter Property="FontSize"
+            Value="{{fontSize}}" />
+    {{/fontSize}}
+    {{#fontAttribute}}
+    <Setter Property="FontAttributes"
+            Value="{{fontAttribute}}" />
+    {{/fontAttribute}}
+    {{#textColor}}
+    <Setter Property="TextColor"
+            Value="{{textColor}}" />
+    {{/textColor}}
+    {{#horizontalTextAlignment}}
+    <Setter Property="HorizontalTextAlignment"
+            Value="{{horizontalTextAlignment}}" />
+    {{/horizontalTextAlignment}}
+        {{#lineBreakMode}}
+    <Setter Property="LineBreakMode"
+            Value="{{lineBreakMode}}" />
+    {{/lineBreakMode}}
+</Style>
+
+{{/styles}}

@@ -1,0 +1,75 @@
+{
+    "name": "zeplin-extension-dotnetmaui",
+    "version": "1.0.0",
+    "description": "Clean UI code generation for .NET MAUI",
+    "author": {
+        "name": "Daniel Monettelli",
+        "url": "https://twitter.com/DaniMonettelli"
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/danielmonettelli/zeplin-extension-dotnetmaui"
+    },
+    "scripts": {
+        "start": "zem start",
+        "build": "zem build",
+        "clean": "zem clean",
+        "exec": "zem exec"
+    },
+    "devDependencies": {
+        "eslint-config-airbnb-base": "^12.1.0",
+        "eslint-plugin-import": "^2.7.0",
+        "mustache-loader": "^1.4.0",
+        "zem": "^0.1.2"
+    },
+    "dependencies": {
+        "indent-string": "^3.2.0",
+        "lodash": "^4.17.5",
+        "mustache": "^2.3.2"
+    },
+    "zeplin": {
+        "displayName": ".NET MAUI",
+        "projectTypes": [
+            "web",
+            "android",
+            "ios"
+        ],
+        "options": [
+            {
+                "name": "Sort styleguide resources",
+                "type": "switch",
+                "id": "sortResources",
+                "default": true
+            },
+            {
+                "name": "Consolidate duplicates (specify suffix)",
+                "type": "text",
+                "id": "duplicateSuffix",
+                "default": ""
+            },
+            {
+                "name": "Define HorizontalTextAlignment on",
+                "type": "picker",
+                "id": "textAlignmentMode",
+                "default": "label",
+                "options": [
+                    {
+                        "name": "Style",
+                        "value": "style"
+                    },
+                    {
+                        "name": "Label",
+                        "value": "label"
+                    }
+                ]
+            },
+            {
+                "name": "Ignore FontFamily",
+                "type": "switch",
+                "id": "ignoreFontFamily",
+                "default": false
+            }
+        ]
+    }
+}
