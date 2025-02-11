@@ -8,7 +8,6 @@ import labelTemplate from './templates/label.mustache';
 import imageTemplate from './templates/image.mustache';
 import borderTemplate from './templates/border.mustache';
 import stackLayoutTemplate from './templates/stacklayout.mustache';
-import cssTemplate from './templates/css.mustache';
 import resourceDictionaryTemplate from './templates/resourceDictionary.mustache';
 import gridTemplate from './templates/grid.mustache';
 import contentPageTemplate from './templates/contentpage.mustache';
@@ -245,14 +244,12 @@ function xamlImage(context, imageLayer) {
   return image;
 }
 
-// Update the formatCornerRadius function
 function formatCornerRadius(borderLayer) {
-  // If no border radius at all, return default value "0,0,0,0"
-  if (!borderLayer.borderRadius) return "0,0,0,0";
+  if (!borderLayer.borderRadius) return null;
 
-  // Check if it's an object with individual corner values
+  // Check if it's an object with topLeft, topRight, bottomRight, bottomLeft
   if (typeof borderLayer.borderRadius === 'object') {
-    const { topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0 } = borderLayer.borderRadius;
+    const { topLeft, topRight, bottomRight, bottomLeft } = borderLayer.borderRadius;
     
     // If all values are the same, return single value
     if (topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft) {
@@ -263,17 +260,15 @@ function formatCornerRadius(borderLayer) {
     return `${topLeft},${topRight},${bottomRight},${bottomLeft}`;
   }
   
-  // Single value was provided, return it as is
+  // Single value case
   return `${borderLayer.borderRadius}`;
 }
 
-// Update the xamlBorder function
 function xamlBorder(context, borderLayer) {
   const border = {
     widthRequest: borderLayer.rect.width,
     heightRequest: borderLayer.rect.height,
-    // Always include cornerRadius to ensure StrokeShape is rendered
-    cornerRadius: formatCornerRadius(borderLayer)
+    cornerRadius: formatCornerRadius(borderLayer),
   };
 
   const hasBackgroundColor = !(
@@ -443,43 +438,7 @@ function processChildLayers(context, layer) {
   return childContent;
 }
 
-function cssStyle(context, cssLayer) {
-  const hasBackgroundColor = !(
-    cssLayer.fills === undefined || cssLayer.fills.length === 0
-  );
-  const hasBorder = !(
-    cssLayer.borders === undefined || cssLayer.borders.length === 0
-  );
-  const hasFonts = !(
-    cssLayer.textStyles === undefined || cssLayer.textStyles.length === 0
-  );
-  const cssItem = {
-    className: toImageName(cssLayer.name),
-    width: cssLayer.rect.width,
-    height: cssLayer.rect.height,
-    opacity: cssLayer.opacity,
-  };
-
-  if (hasBackgroundColor) {
-    const backgroundColor = xamlColorHex(cssLayer.fills[0].color);
-    cssItem.backgroundColor = backgroundColor;
-  }
-
-  if (hasBorder) {
-    const borderColor = xamlColorHex(cssLayer.borders[0].fill.color);
-    cssItem.borderColor = borderColor;
-    cssItem.borderWidth = cssLayer.borders[0].thickness;
-  }
-  if (hasFonts) {
-    cssItem.fontFamily = cssLayer.textStyles[0].textStyle.fontFamily;
-    cssItem.fontSize = cssLayer.textStyles[0].textStyle.fontSize;
-    cssItem.fontStyle = cssLayer.textStyles[0].textStyle.fontStyle;
-    cssItem.textAlign = cssLayer.textStyles[0].textStyle.textAlign;
-    cssItem.color = xamlColorHex(cssLayer.textStyles[0].textStyle.color);
-  }
-
-  return cssItem;
-}
+// Eliminar la función cssStyle completa
 
 function xamlCode(code) {
   return {
@@ -623,8 +582,8 @@ function isFullUISelection(layer) {
 function layer(context, selectedLayer) {
   if (selectedLayer.type === 'text') {
     const label = xamlLabel(context, selectedLayer);
-    const cssLabelItem = cssStyle(context, selectedLayer);
-    const code = labelTemplate(label) + cssTemplate(cssLabelItem);
+    // Quitar cssLabelItem y cssTemplate
+    const code = labelTemplate(label);
     return xamlCode(formatXaml(code));
   } 
   
@@ -635,7 +594,6 @@ function layer(context, selectedLayer) {
   }
 
   const grid = xamlGrid(context, selectedLayer);
-  const cssItem = cssStyle(context, selectedLayer);
   
   // Process child components and add them to the grid
   grid.content = processChildLayers(context, selectedLayer);
@@ -647,12 +605,14 @@ function layer(context, selectedLayer) {
     const contentPage = {
       content: gridTemplate(grid)
     };
-    code = contentPageTemplate(contentPage) + cssTemplate(cssItem);
+    // Quitar cssTemplate
+    code = contentPageTemplate(contentPage);
   } else {
     // For partial UI, keep using Border
     const border = xamlBorder(context, selectedLayer);
     border.content = gridTemplate(grid);
-    code = borderTemplate(border) + cssTemplate(cssItem);
+    // Quitar cssTemplate
+    code = borderTemplate(border);
   }
   
   return xamlCode(formatXaml(code));
