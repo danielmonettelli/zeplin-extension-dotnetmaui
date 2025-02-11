@@ -10,6 +10,8 @@ import borderTemplate from './templates/border.mustache';
 import stackLayoutTemplate from './templates/stacklayout.mustache';
 import cssTemplate from './templates/css.mustache';
 import resourceDictionaryTemplate from './templates/resourceDictionary.mustache';
+import gridTemplate from './templates/grid.mustache';
+import contentPageTemplate from './templates/contentpage.mustache';
 
 // Added caching object to improve performance if enabled
 const cache = {};
@@ -243,28 +245,53 @@ function xamlImage(context, imageLayer) {
   return image;
 }
 
+// Update the formatCornerRadius function
+function formatCornerRadius(borderLayer) {
+  // If no border radius at all, return default value "0,0,0,0"
+  if (!borderLayer.borderRadius) return "0,0,0,0";
+
+  // Check if it's an object with individual corner values
+  if (typeof borderLayer.borderRadius === 'object') {
+    const { topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0 } = borderLayer.borderRadius;
+    
+    // If all values are the same, return single value
+    if (topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft) {
+      return `${topLeft}`;
+    }
+    
+    // Return in .NET MAUI order: topleft,topright,bottomright,bottomleft
+    return `${topLeft},${topRight},${bottomRight},${bottomLeft}`;
+  }
+  
+  // Single value was provided, return it as is
+  return `${borderLayer.borderRadius}`;
+}
+
+// Update the xamlBorder function
 function xamlBorder(context, borderLayer) {
   const border = {
     widthRequest: borderLayer.rect.width,
     heightRequest: borderLayer.rect.height,
-    cornerRadius: borderLayer.borderRadius || 0,
+    // Always include cornerRadius to ensure StrokeShape is rendered
+    cornerRadius: formatCornerRadius(borderLayer)
   };
+
   const hasBackgroundColor = !(
     borderLayer.fills === undefined || borderLayer.fills.length === 0
   );
   if (hasBackgroundColor) {
-    // eslint-disable-next-line max-len
     const backgroundColor = borderLayer.fills[0].color && xamlColorLiteral(context, borderLayer.fills[0].color);
     border.backgroundColor = backgroundColor;
   }
+
   const hasBorder = !(
     borderLayer.borders === undefined || borderLayer.borders.length === 0
   );
   if (hasBorder) {
-    // eslint-disable-next-line max-len
     const outlineColor = borderLayer.borders[0].fill.color && xamlColorLiteral(context, borderLayer.borders[0].fill.color);
     border.outlineColor = outlineColor;
   }
+
   return border;
 }
 
@@ -284,6 +311,136 @@ function xamlStackLayout(context, stackLayer) {
   }
 
   return stackLayout;
+}
+
+// Add this new helper function to calculate grid definitions
+function calculateGridDefinitions(layer) {
+  const childLayers = layer.layers || [];
+  
+  // Calculate rows based on vertical positioning
+  const rows = childLayers.reduce((acc, child) => {
+    const height = child.rect.height;
+    if (height > 0) {
+      acc.push(`${height}`);
+    }
+    return acc;
+  }, []);
+
+  // Calculate columns based on horizontal positioning
+  const cols = childLayers.reduce((acc, child) => {
+    const width = child.rect.width;
+    if (width > 0) {
+      // Use Auto for fixed-width elements, * for flexible ones
+      acc.push(width > layer.rect.width / 2 ? '*' : 'Auto');
+    }
+    return acc;
+  }, []);
+
+  return {
+    rowDefinitions: rows.length > 0 ? rows.join(', ') : 'Auto',
+    columnDefinitions: cols.length > 0 ? cols.join(', ') : '*'
+  };
+}
+
+// Add helper to calculate grid position for a child element
+function calculateGridPosition(parentLayer, childLayer) {
+  const parentRect = parentLayer.rect;
+  const childRect = childLayer.rect;
+  
+  // Calculate relative position
+  const relativeY = childRect.y - parentRect.y;
+  const relativeX = childRect.x - parentRect.x;
+  
+  // Calculate row and column based on position
+  const row = Math.floor(relativeY / (parentRect.height / 4));
+  const column = Math.floor(relativeX / (parentRect.width / 3));
+  
+  return {
+    row: Math.min(Math.max(row, 0), 3), // Limit to 0-3
+    column: Math.min(Math.max(column, 0), 2) // Limit to 0-2
+  };
+}
+
+function xamlGrid(context, layer) {
+  const hasBackgroundColor = !(
+    layer.fills === undefined || layer.fills.length === 0
+  );
+  const grid = {
+    widthRequest: layer.rect.width,
+    heightRequest: layer.rect.height,
+    ...calculateGridDefinitions(layer)
+  };
+
+  if (hasBackgroundColor) {
+    const backgroundColor = layer.fills[0].color
+      && xamlColorLiteral(context, layer.fills[0].color);
+    grid.backgroundColor = backgroundColor;
+  }
+
+  return grid;
+}
+
+// Add new helper for XAML formatting
+function formatXaml(code) {
+  let indent = 0;
+  const lines = code.split(/>\s*</);
+  
+  return lines.map((line, i) => {
+    // Handle self-closing tags
+    if (line.includes('/>')) {
+      const formatted = '  '.repeat(indent) + (i === 0 ? line : '<' + line);
+      return formatted;
+    }
+
+    // Handle closing tags
+    if (line.startsWith('/')) {
+      indent--;
+      return '  '.repeat(indent) + '<' + line + '>';
+    }
+
+    // Handle opening tags
+    const formatted = '  '.repeat(indent) + (i === 0 ? line : '<' + line + '>');
+    if (!line.includes('/>') && !line.startsWith('/')) {
+      indent++;
+    }
+    return formatted;
+  }).join('\n');
+}
+
+function processChildLayers(context, layer) {
+  if (!layer.layers || layer.layers.length === 0) {
+    return '';
+  }
+
+  let childContent = '';
+  layer.layers.forEach((childLayer, index) => {
+    let childElement;
+    const gridPos = calculateGridPosition(layer, childLayer);
+    
+    if (childLayer.type === 'text') {
+      const label = xamlLabel(context, childLayer);
+      childElement = labelTemplate(label)
+        .replace('/>', 
+          ` Grid.Row="${gridPos.row}" Grid.Column="${gridPos.column}" />`);
+    } else if (childLayer.exportable) {
+      const image = xamlImage(context, childLayer);
+      childElement = imageTemplate(image)
+        .replace('/>', 
+          ` Grid.Row="${gridPos.row}" Grid.Column="${gridPos.column}" />`);
+    } else {
+      const border = xamlBorder(context, childLayer);
+      const grid = xamlGrid(context, childLayer);
+      grid.content = processChildLayers(context, childLayer);
+      border.content = gridTemplate(grid);
+      childElement = borderTemplate(border)
+        .replace('>', 
+          ` Grid.Row="${gridPos.row}" Grid.Column="${gridPos.column}">`);
+    }
+
+    childContent += '\n' + childElement + '\n';
+  });
+
+  return childContent;
 }
 
 function cssStyle(context, cssLayer) {
@@ -456,25 +613,49 @@ function exportTextStyles(context) {
   return result;
 }
 
+// Add helper to detect if this is a full UI selection
+function isFullUISelection(layer) {
+  // Check if this is likely a full screen/UI selection
+  // You might want to adjust these thresholds based on your needs
+  return layer.rect.width >= 360 && layer.rect.height >= 640;
+}
+
 function layer(context, selectedLayer) {
   if (selectedLayer.type === 'text') {
     const label = xamlLabel(context, selectedLayer);
     const cssLabelItem = cssStyle(context, selectedLayer);
     const code = labelTemplate(label) + cssTemplate(cssLabelItem);
-
-    return xamlCode(`${code}`);
-  } if (selectedLayer.exportable) {
+    return xamlCode(formatXaml(code));
+  } 
+  
+  if (selectedLayer.exportable) {
     const image = xamlImage(context, selectedLayer);
     const code = imageTemplate(image);
-    return xamlCode(`${code}`);
+    return xamlCode(formatXaml(code));
   }
 
-  const border = xamlBorder(context, selectedLayer);
-  const stackLayout = xamlStackLayout(context, selectedLayer);
+  const grid = xamlGrid(context, selectedLayer);
   const cssItem = cssStyle(context, selectedLayer);
-  const code = borderTemplate(border) + stackLayoutTemplate(stackLayout) + cssTemplate(cssItem);
-
-  return xamlCode(`${code}`);
+  
+  // Process child components and add them to the grid
+  grid.content = processChildLayers(context, selectedLayer);
+  
+  let code;
+  
+  if (isFullUISelection(selectedLayer)) {
+    // For full UI, wrap with ContentPage
+    const contentPage = {
+      content: gridTemplate(grid)
+    };
+    code = contentPageTemplate(contentPage) + cssTemplate(cssItem);
+  } else {
+    // For partial UI, keep using Border
+    const border = xamlBorder(context, selectedLayer);
+    border.content = gridTemplate(grid);
+    code = borderTemplate(border) + cssTemplate(cssItem);
+  }
+  
+  return xamlCode(formatXaml(code));
 }
 
 const extension = {
