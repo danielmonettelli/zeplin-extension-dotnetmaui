@@ -15,7 +15,8 @@
         "start": "zem start",
         "build": "zem build",
         "clean": "zem clean",
-        "exec": "zem exec"
+        "exec": "zem exec",
+        "publish": "npm publish"
     },
     "devDependencies": {
         "mustache-loader": "^1.4.3",
