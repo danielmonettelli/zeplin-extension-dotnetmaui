@@ -21,6 +21,9 @@ jobs:
 
       - name: 📥 Install Dependencies
         run: npm ci  # Safer and faster than "npm install"
+      
+      - name: 📦 Install Zeplin Extension Manager (zem)
+        run: npm install -g @zeplin/cli
 
       - name: 🔍 Get Current Version from package.json
         id: get_version
