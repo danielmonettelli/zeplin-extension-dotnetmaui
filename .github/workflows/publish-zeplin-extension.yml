@@ -3,7 +3,7 @@ name: Publish Zeplin Extension
 on:
   push:
     tags:
-      - "v*"  # Trigger only when a version tag is pushed (e.g., v1.0.0)
+      - "v*"  # Trigger only when pushing version tags (e.g., v1.0.3)
 
 jobs:
   publish:
@@ -20,28 +20,21 @@ jobs:
           node-version: 20
 
       - name: 📥 Install Dependencies
-        run: npm ci  # Safer and faster than "npm install"
-      
-      - name: 📦 Install Zeplin Extension Manager (zem)
-        run: npm install -g @zeplin/cli
+        run: npm ci  # Installs all dependencies from package.json
 
-      - name: 🔍 Get Current Version from package.json
-        id: get_version
-        run: echo "VERSION=$(node -p 'require("./package.json").version')" >> $GITHUB_ENV
+      - name: 📦 Install Zeplin CLI (zem)
+        run: npm install -g @zeplin/cli@latest
 
-      - name: 🔎 Check if Version Already Exists in Zeplin
+      - name: 🔍 Verify zem Installation
         run: |
-          if zem info | grep -q $VERSION; then
-            echo "⚠️ Version $VERSION already exists. Stopping publish."
+          if ! command -v zem &> /dev/null; then
+            echo "❌ zem command not found, stopping workflow."
             exit 1
+          else
+            echo "✅ zem is installed correctly."
           fi
-        env:
-          ZEP_TOKEN: ${{ secrets.ZEM_ACCESS_TOKEN }}
 
       - name: 🚀 Publish Extension to Zeplin
-        run: zem publish
+        run: npx zem publish
         env:
           ZEP_TOKEN: ${{ secrets.ZEM_ACCESS_TOKEN }}
-
-      - name: ✅ Confirm Publish
-        run: echo "Zeplin Extension v$VERSION Published Successfully!"
