@@ -31,4 +31,4 @@ jobs:
       - name: 🚀 Publish Extension to Zeplin
         run: npx zem publish
         env:
-          ZEP_TOKEN: ${{ secrets.ZEM_ACCESS_TOKEN }}
+          ZEM_ACCESS_TOKEN: ${{ secrets.ZEM_ACCESS_TOKEN }}
