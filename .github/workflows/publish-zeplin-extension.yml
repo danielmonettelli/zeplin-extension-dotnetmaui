@@ -20,13 +20,13 @@ jobs:
           node-version: 20
 
       - name: 📥 Install Dependencies
-        run: npm ci  # Instala las dependencias del proyecto
+        run: npm ci
 
-      - name: 📦 Install Zeplin CLI (zem)
-        run: npm install @zeplin/cli@latest
+      - name: ⚙️ Build Extension
+        run: npm run build
 
-      - name: 🔍 Verify zem Installation
-        run: npx zem --version
+      - name: 🔍 Verify manifest.json
+        run: ls -la dist/
 
       - name: 🚀 Publish Extension to Zeplin
         run: npx zem publish
