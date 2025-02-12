@@ -3,7 +3,7 @@ name: Publish Zeplin Extension
 on:
   push:
     tags:
-      - "v*"  # Trigger only when pushing version tags (e.g., v1.0.3)
+      - "v*"
 
 jobs:
   publish:
@@ -20,19 +20,13 @@ jobs:
           node-version: 20
 
       - name: 📥 Install Dependencies
-        run: npm ci  # Installs all dependencies from package.json
+        run: npm ci  # Instala las dependencias del proyecto
 
       - name: 📦 Install Zeplin CLI (zem)
-        run: npm install -g @zeplin/cli@latest
+        run: npm install @zeplin/cli@latest
 
       - name: 🔍 Verify zem Installation
-        run: |
-          if ! command -v zem &> /dev/null; then
-            echo "❌ zem command not found, stopping workflow."
-            exit 1
-          else
-            echo "✅ zem is installed correctly."
-          fi
+        run: npx zem --version
 
       - name: 🚀 Publish Extension to Zeplin
         run: npx zem publish
