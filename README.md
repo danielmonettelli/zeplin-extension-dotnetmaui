@@ -1,66 +1,52 @@
-# Zeplin .NET MAUI Extension
+# Zeplin Extension for .NET MAUI
 
-[Zeplin extension](https://extensions.zeplin.io/) for .NET MAUI.
+## Overview
 
-[Available on GitHub](https://github.com/danielmonettelli/zeplin-extension-dotnetmaui).
+This extension extracts design assets from Zeplin and converts them into XAML for .NET MAUI projects. It currently enables developers to:
 
-## Samples
+- Export color resources into a Colors.xaml file.
+- Generate deterministic text styles (Labels.xaml) using region-based keys derived from font properties.
+- Convert selected UI layers into appropriate XAML elements:
+  - Text layers become Labels.
+  - Image layers become Images.
+  - Other layers are wrapped in Borders or, if large enough, in full ContentPages.
 
-Sample colors output:
+Integrating this extension into Zeplin helps .NET MAUI developers seamlessly implement accurate design exports in their UI/UX workflows.
 
-```xml
-<Color x:Key="PrimaryColor">#FFFF0000</Color>
-<Color x:Key="SecondaryColor">#FF00FF00</Color>
-<Color x:Key="TertiaryColor">#FF0000FF</Color>
-```
+## Main Features
 
-Sample text style output:
+- Deterministic text style generation based on regions and typography attributes.
+- Optimized caching for colors and label styles to reduce processing time.
+- Full support for images, borders, grids, and complete UI ContentPages.
+- Customization using context options such as sorting resources, consolidating duplicates, and ignoring FontFamily.
 
-```xml
-<Style x:Key="SampleTextStyle"
-       TargetType="Label">
-    <Setter Property="FontFamily"
-            Value="SFProText" />
-    <Setter Property="FontSize"
-            Value="20" />
-    <Setter Property="FontAttributes"
-            Value="Bold" />
-</Style>
-```
+## Usage
 
-Sample text layer output:
-
-```xml
-<Label Text="Hello"
-           Style="{StaticResource SampleTextStyle}"
-           HorizontalTextAlignment="Center">
-```
+- Configure the extension options via the provided context.
+- Use `exportColors` to generate the Colors.xaml file.
+- Use `exportTextStyles` to generate the Labels.xaml file.
+- Employ `layer` to generate the XAML for the selected component.
+- For full UI cases, the extension wraps components in an optimized ContentPage.
 
 ## Options
 
-### Sort styleguide resources
+### Sort Styleguide Resources
 
-Toggle whether styleguide resources should be sorted alphabetically or not.
+Toggle automatic alphabetical sorting of styleguide resources.
 
-### Consolidate duplicates
+### Consolidate Duplicates
 
-Define the suffix that indicates that a resource is a duplicate and should be consolidated.
-
-For example, using the value `_duplicate` would replace all instances of `PrimaryColor_duplicate` with `PrimaryColor` in generated snippets.
-
-This is useful when dealing with values that are almost identical (i.e., `#FFFFFF` vs `#FFFFFE`) or properties that don't warrant a distinct style (i.e., `TextAlignment`).
+Define a suffix (e.g., `_duplicate`) to consolidate duplicate styles or colors.
 
 ### Ignore FontFamily
 
-Toggle whether `FontFamily` should be generated or not.
+Toggle whether FontFamily should be generated or omitted based on project needs.
 
 ## Development
 
-I have forked this from the XAML extension for UWP made by Nventive. You can find the repo [here](https://github.com/nventive/zeplin-extension-xaml).
+This extension is focused on enhancing productivity and consistency in .NET MAUI projects by converting Zeplin designs into XAML. It is developed using [zem](https://github.com/zeplin/zem), a command line tool that facilitates quick extension creation and testing.
 
-This extension is developed using [zem](https://github.com/zeplin/zem), Zeplin Extension Manager. zem is a command line tool that lets you quickly create and test extensions.
-
-To learn more about zem, [see documentation](https://github.com/zeplin/zem).
+For more details on zem, see the [documentation](https://github.com/zeplin/zem).
 
 ## License
 
